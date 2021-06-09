@@ -1,3 +1,5 @@
+import mongodb from "mongodb";
+const ObjectId = mongodb.ObjectID;
 let restaurants;
 
 export default class RestaurantsDAO {
@@ -5,7 +7,6 @@ export default class RestaurantsDAO {
     if (restaurants) {
       return;
     }
-
     try {
       restaurants = await conn
         .db(process.env.RESTREVIEWS_NS)
@@ -41,6 +42,7 @@ export default class RestaurantsDAO {
       console.error(`Unable to issue find command, ${e}`);
       return { restaurantsList: [], totalNumRestaurants: 0 };
     }
+
     const displayCursor = cursor
       .limit(restaurantsPerPage)
       .skip(restaurantsPerPage * page);
@@ -57,13 +59,12 @@ export default class RestaurantsDAO {
       return { restaurantsList: [], totalNumRestaurants: 0 };
     }
   }
-
-  static async getRestaurantsByID(id) {
+  static async getRestaurantByID(id) {
     try {
       const pipeline = [
         {
           $match: {
-            _id: new Object(id),
+            _id: new ObjectId(id),
           },
         },
         {
@@ -76,13 +77,13 @@ export default class RestaurantsDAO {
               {
                 $match: {
                   $expr: {
-                    $eq: ["$restaurant_id"],
+                    $eq: ["$restaurant_id", "$$id"],
                   },
                 },
               },
               {
                 $sort: {
-                  data: -1,
+                  date: -1,
                 },
               },
             ],
@@ -90,7 +91,7 @@ export default class RestaurantsDAO {
           },
         },
         {
-          $addFileds: {
+          $addFields: {
             reviews: "$reviews",
           },
         },
@@ -108,7 +109,8 @@ export default class RestaurantsDAO {
       cuisines = await restaurants.distinct("cuisine");
       return cuisines;
     } catch (e) {
-      console.error;
+      console.error(`Unable to get cuisines, ${e}`);
+      return cuisines;
     }
   }
 }
