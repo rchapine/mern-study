@@ -56,7 +56,7 @@ function App() {
             component={RestaurantsList}
           />
           <Route
-            path="restaurants/id/review"
+            path="restaurants/:id/review"
             render={(props) => <AddReview {...props} user={user} />}
           />
           <Route
